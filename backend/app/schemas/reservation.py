@@ -36,7 +36,7 @@ class Reservation(ReservationBase):
     restaurant: Restaurant
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_schema_extra = {
             "example": {
                 "id": 1,

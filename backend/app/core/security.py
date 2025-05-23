@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Configuración de seguridad
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="api/v1/auth/login",
+    tokenUrl=getattr(settings, "API_V1_STR", "/api/v1") + "/auth/login",
     scheme_name="JWT"
 )
 security = HTTPBearer()
@@ -42,6 +42,7 @@ def create_access_token(
 ) -> str:
     """
     Crea un token JWT con claims adicionales opcionales
+    
     Args:
         subject: Identificador del usuario (normalmente user.id)
         expires_delta: Tiempo de expiración personalizado
@@ -76,13 +77,20 @@ def create_access_token(
 
 async def get_token_from_request(request: Request) -> str:
     """Extrae el token del header Authorization"""
-    credentials: HTTPAuthorizationCredentials = await security(request)
-    if not credentials or not credentials.scheme == "Bearer":
+    try:
+        credentials: HTTPAuthorizationCredentials = await security(request)
+        if not credentials or not credentials.scheme == "Bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme"
+            )
+        return credentials.credentials
+    except Exception as e:
+        logger.error(f"Error extracting token: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication scheme"
+            detail="Could not validate credentials"
         )
-    return credentials.credentials
 
 async def get_current_user(
     request: Request,
@@ -100,7 +108,8 @@ async def get_current_user(
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            algorithms=[settings.ALGORITHM],
+            options={"verify_aud": False}
         )
         user_id: str = payload.get("sub")
         token_type: str = payload.get("type")
@@ -114,9 +123,10 @@ async def get_current_user(
             logger.warning(f"User not found: {user_id}")
             raise credentials_exception
             
-        # Verificar si el token ha sido revocado (opcional)
-        # if user.token_version != payload.get("ver"):
-        #     raise credentials_exception
+        # Verificación opcional de versión de token
+        if hasattr(user, 'token_version') and payload.get('ver') != user.token_version:
+            logger.warning(f"Token version mismatch for user: {user_id}")
+            raise credentials_exception
             
     except JWTError as e:
         logger.error(f"JWT Error: {e}")
@@ -160,11 +170,22 @@ def role_required(*required_roles: UserRole):
         return current_user
     return role_checker
 
+# Alias para compatibilidad con código existente
+has_role = role_required
+
 def create_tokens(user_id: int, additional_claims: Optional[dict] = None) -> dict:
     """Crea ambos tokens (access y refresh) con claims adicionales opcionales"""
+    common_claims = additional_claims or {}
     return {
-        "access_token": create_access_token(user_id, additional_claims=additional_claims),
-        "refresh_token": create_access_token(user_id, refresh=True, additional_claims=additional_claims),
+        "access_token": create_access_token(
+            user_id, 
+            additional_claims=common_claims
+        ),
+        "refresh_token": create_access_token(
+            user_id, 
+            refresh=True,
+            additional_claims={**common_claims, "refresh": True}
+        ),
         "token_type": "bearer"
     }
 
@@ -174,7 +195,8 @@ def verify_refresh_token(token: str) -> dict:
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            algorithms=[settings.ALGORITHM],
+            options={"verify_aud": False}
         )
         if payload.get("type") != "refresh":
             raise JWTError("Invalid token type")
