@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.database import engine, Base
+from app.database import engine, Base  # Asegúrate que engine sea AsyncEngine
 from app.api.v1.endpoints import auth, users, restaurants, reservations
 
 app = FastAPI(
@@ -40,7 +40,7 @@ app.include_router(
     tags=["reservations"]
 )
 
-# Eventos
+# Evento de startup corregido para async
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:

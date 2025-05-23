@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Base de datos
-    DATABASE_URL: str = "mysql+pymysql://root:123456@localhost:3306/reserveat"
+    DATABASE_URL = "mysql+aiomysql://root:123456@localhost:3306/reserveat"
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
     
