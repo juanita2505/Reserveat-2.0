@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     
     # Autenticación JWT
     SECRET_KEY: str = Field(
-        default="tu-clave-secreta-aqui",
+        default="Bb9NI2iZPMmby5vtkHTnLJAQC_sN3fA6N16-mpfEdo",
         min_length=32,
         description="Clave para firmar tokens JWT"
     )
