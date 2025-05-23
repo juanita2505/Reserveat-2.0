@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from datetime import datetime, time
-from ..models.restaurant import Restaurant
-from ..schemas.restaurant import RestaurantCreate, RestaurantUpdate
+from app.models.restaurant import Restaurant
+from app.schemas.restaurant import RestaurantCreate, RestaurantUpdate
 from typing import List, Optional
 
 def get_restaurants(

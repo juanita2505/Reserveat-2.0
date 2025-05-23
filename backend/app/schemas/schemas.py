@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import time
 from typing import Optional, List
+from datetime import datetime
 from enum import Enum
 
 class CuisineType(str, Enum):
