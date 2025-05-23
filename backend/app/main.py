@@ -49,6 +49,6 @@ async def startup():
 @app.get("/")
 async def root():
     return {
-        "message": f"Welcome to {settings.APP_NAME} API",
+        "message": "Welcome to Reserveat API",  # Valor fijo
         "version": settings.APP_VERSION
     }

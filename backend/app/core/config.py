@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from pydantic import Field, PostgresDsn
+from typing import List, ClassVar, Optional
 
 class Settings(BaseSettings):
     # Configuración general
@@ -10,22 +11,63 @@ class Settings(BaseSettings):
     # Configuración API
     API_V1_STR: str = "/api/v1"
     
-    # Base de datos
-    DATABASE_URL = "mysql+aiomysql://root:123456@localhost:3306/reserveat"
-    DATABASE_POOL_SIZE: int = 20
-    DATABASE_MAX_OVERFLOW: int = 10
+    # Base de datos (corregido con anotación de tipo)
+    DATABASE_URL: str = Field(
+        default="mysql+aiomysql://root:123456@localhost:3306/reserveat",
+        description="URL de conexión a la base de datos"
+    )
+    
+    DATABASE_POOL_SIZE: int = Field(
+        default=20,
+        ge=1,
+        description="Tamaño del pool de conexiones"
+    )
+    
+    DATABASE_MAX_OVERFLOW: int = Field(
+        default=10,
+        ge=0,
+        description="Conexiones adicionales máximas"
+    )
     
     # Autenticación JWT
-    SECRET_KEY: str = "tu-clave-secreta-aqui"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 días
+    SECRET_KEY: str = Field(
+        default="tu-clave-secreta-aqui",
+        min_length=32,
+        description="Clave para firmar tokens JWT"
+    )
     
-    # CORS (como strings separadas por comas)
-    CORS_ORIGINS: str = "*"
-    CORS_METHODS: str = "*"
-    CORS_HEADERS: str = "*"
+    ALGORITHM: str = Field(
+        default="HS256",
+        description="Algoritmo de firma JWT"
+    )
     
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=30,
+        gt=0,
+        description="Expiración token acceso (min)"
+    )
+    
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=10080,
+        description="Expiración token refresco (min)"
+    )
+    
+    # CORS
+    CORS_ORIGINS: str = Field(
+        default="*",
+        description="Orígenes permitidos separados por comas"
+    )
+    
+    CORS_METHODS: str = Field(
+        default="*",
+        description="Métodos HTTP permitidos"
+    )
+    
+    CORS_HEADERS: str = Field(
+        default="*",
+        description="Cabeceras permitidas"
+    )
+
     # Propiedades calculadas
     @property
     def cors_origins_list(self) -> List[str]:
