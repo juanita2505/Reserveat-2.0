@@ -2,28 +2,62 @@
 
 services:
   db:
-    image: postgres:13
+    image: postgres:13-alpine
     environment:
-      POSTGRES_USER: reserveat
-      POSTGRES_PASSWORD: reserveat
-      POSTGRES_DB: reserveat
+      POSTGRES_USER: ${DB_USER:-reserveat}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-reserveat}
+      POSTGRES_DB: ${DB_NAME:-reserveat}
+    ports:
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-reserveat} -d ${DB_NAME:-reserveat}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reserveat-net
 
   backend:
-    build: ./backend
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-    volumes:
-      - ./backend:/app
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-    depends_on:
-      - db
+      - "${API_PORT:-8000}:8000"
     environment:
-      - DATABASE_URL=postgresql://reserveat:reserveat@db:5432/reserveat
+      - DATABASE_URL=postgresql://${DB_USER:-reserveat}:${DB_PASSWORD:-reserveat}@db:5432/${DB_NAME:-reserveat}
+      - APP_ENV=${APP_ENV:-development}
+      - SECRET_KEY=${SECRET_KEY:-changeme}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+      - /app/__pycache__
+    networks:
+      - reserveat-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - reserveat-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
+  redis_data:
+
+networks:
+  reserveat-net:
+    driver: bridge
