@@ -1,38 +1,46 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.endpoints import restaurants, users, reservations
-from app.models.user import User
-from app.models.restaurant import Restaurant
-from .database import engine, Base
-import sys
-from pathlib import Path
+from app.core.config import settings
+from app.database import engine
+from app.models.base import Base
+from app.api.v1.endpoints import (
+    auth,
+    users,
+    restaurants,
+    reservations
+)
 
-# Añade esto al inicio del archivo
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
-from fastapi import FastAPI
-from app.api.v1.endpoints import restaurants, users, reservations
-
-app = FastAPI()
-
-app.include_router(restaurants.router, prefix="/api/v1/restaurants", tags=["restaurants"])
+# Crear la aplicación FastAPI
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 # Configuración CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=settings.cors_methods_list,
+    allow_headers=settings.cors_headers_list,
 )
 
-# Crear tablas de la base de datos
-Base.metadata.create_all(bind=engine)
+# Crear tablas de la base de datos (solo para desarrollo)
+async def create_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+@app.on_event("startup")
+async def startup_event():
+    await create_tables()
 
 # Incluir routers
-app.include_router(restaurants.router)
-app.include_router(users.router)
-app.include_router(reservations.router)
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+app.include_router(restaurants.router, prefix="/api/v1/restaurants", tags=["restaurants"])
+app.include_router(reservations.router, prefix="/api/v1/reservations", tags=["reservations"])
 
 @app.get("/", tags=["Root"])
 async def root():
