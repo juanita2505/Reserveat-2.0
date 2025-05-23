@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import time
+from app.models.user import User 
 
 from app.crud.restaurant import (
     get_restaurants,
