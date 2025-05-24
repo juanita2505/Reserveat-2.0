@@ -1,63 +1,32 @@
 ﻿version: '3.8'
 
 services:
-  db:
-    image: postgres:13-alpine
-    environment:
-      POSTGRES_USER: ${DB_USER:-reserveat}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-reserveat}
-      POSTGRES_DB: ${DB_NAME:-reserveat}
-    ports:
-      - "${DB_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-reserveat} -d ${DB_NAME:-reserveat}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - reserveat-net
-
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://${DB_USER:-reserveat}:${DB_PASSWORD:-reserveat}@db:5432/${DB_NAME:-reserveat}
-      - APP_ENV=${APP_ENV:-development}
-      - SECRET_KEY=${SECRET_KEY:-changeme}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - DATABASE_URL=mysql+pymysql://root:123456@db:3306/reserveat
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     volumes:
-      - ./:/app
-      - /app/__pycache__
-    networks:
-      - reserveat-net
-    restart: unless-stopped
+      - .:/app
+    command: bash -c "sleep 5 && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
-  redis:
-    image: redis:7-alpine
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: reserveat
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "3306:3306"
     volumes:
-      - redis_data:/data
-    networks:
-      - reserveat-net
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
 volumes:
-  postgres_data:
-  redis_data:
-
-networks:
-  reserveat-net:
-    driver: bridge
+  mysql_data:

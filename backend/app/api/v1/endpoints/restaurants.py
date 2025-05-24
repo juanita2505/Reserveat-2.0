@@ -26,7 +26,7 @@ from app.models.user import UserRole
 router = APIRouter()
 
 @router.get("/", response_model=RestaurantSearchResults)
-def read_restaurants(
+def search_restaurants(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
@@ -36,7 +36,7 @@ def read_restaurants(
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve restaurants with optional filters.
+    Search restaurants with filters
     """
     restaurants = get_restaurants(
         db,
@@ -47,82 +47,58 @@ def read_restaurants(
         price_ranges=price_ranges,
         is_open_now=is_open_now
     )
-    total = len(restaurants)  # En producción usarías count con los mismos filtros
-    return {"results": restaurants, "total": total}
+    return {"results": restaurants, "total": len(restaurants)}
 
 @router.post("/", response_model=Restaurant, status_code=status.HTTP_201_CREATED)
-def create_new_restaurant(
+def create_restaurant_endpoint(
     restaurant: RestaurantCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(has_role(UserRole.RESTAURANT_OWNER))
+    current_user = Depends(has_role(UserRole.RESTAURANT_OWNER))
 ):
-    """
-    Create a new restaurant (only for restaurant owners).
-    """
     return create_restaurant(db=db, restaurant=restaurant, owner_id=current_user.id)
 
 @router.get("/my-restaurants", response_model=List[Restaurant])
 def get_my_restaurants(
     db: Session = Depends(get_db),
-    current_user: User = Depends(has_role(UserRole.RESTAURANT_OWNER))
+    current_user = Depends(has_role(UserRole.RESTAURANT_OWNER))
 ):
-    """
-    Get restaurants owned by the current user.
-    """
     return get_restaurants_by_owner(db, owner_id=current_user.id)
 
 @router.get("/{restaurant_id}", response_model=Restaurant)
 def read_restaurant(restaurant_id: int, db: Session = Depends(get_db)):
-    """
-    Get a specific restaurant by ID.
-    """
     db_restaurant = get_restaurant(db, restaurant_id=restaurant_id)
-    if db_restaurant is None:
+    if not db_restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     return db_restaurant
 
 @router.put("/{restaurant_id}", response_model=Restaurant)
-def update_existing_restaurant(
+def update_restaurant_endpoint(
     restaurant_id: int,
     restaurant: RestaurantUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user = Depends(get_current_active_user)
 ):
-    """
-    Update a restaurant (only for owner or admin).
-    """
     db_restaurant = get_restaurant(db, restaurant_id=restaurant_id)
-    if db_restaurant is None:
+    if not db_restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     
-    # Verificar si el usuario es el dueño o un admin
     if db_restaurant.owner_id != current_user.id and current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     
     return update_restaurant(db=db, restaurant_id=restaurant_id, restaurant=restaurant)
 
 @router.delete("/{restaurant_id}")
-def delete_existing_restaurant(
+def delete_restaurant_endpoint(
     restaurant_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user = Depends(get_current_active_user)
 ):
-    """
-    Delete a restaurant (only for owner or admin).
-    """
     db_restaurant = get_restaurant(db, restaurant_id=restaurant_id)
-    if db_restaurant is None:
+    if not db_restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     
-    # Verificar si el usuario es el dueño o un admin
     if db_restaurant.owner_id != current_user.id and current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     
     delete_restaurant(db=db, restaurant_id=restaurant_id)
     return {"message": "Restaurant deleted successfully"}

@@ -1,35 +1,54 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.endpoints import restaurants, users, reservations
-from .database import engine, Base
+from app.core.config import settings
+from app.database import engine, Base  # Asegúrate que engine sea AsyncEngine
+from app.api.v1.endpoints import auth, users, restaurants, reservations
 
 app = FastAPI(
-    title="Reserveat API",
-    description="API para el sistema de reservas de restaurantes",
-    version="1.0.0"
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION
 )
 
-# Configuración CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=settings.cors_methods_list,
+    allow_headers=settings.cors_headers_list,
 )
 
-# Crear tablas de la base de datos
-Base.metadata.create_all(bind=engine)
+# Routers
+app.include_router(
+    auth.router,
+    prefix=settings.API_V1_STR,
+    tags=["auth"]
+)
+app.include_router(
+    users.router,
+    prefix=settings.API_V1_STR,
+    tags=["users"]
+)
+app.include_router(
+    restaurants.router,
+    prefix=settings.API_V1_STR,
+    tags=["restaurants"]
+)
+app.include_router(
+    reservations.router,
+    prefix=settings.API_V1_STR,
+    tags=["reservations"]
+)
 
-# Incluir routers
-app.include_router(restaurants.router)
-app.include_router(users.router)
-app.include_router(reservations.router)
+# Evento de startup corregido para async
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-@app.get("/", tags=["Root"])
+@app.get("/")
 async def root():
     return {
-        "message": "Bienvenido a Reserveat API",
-        "docs": "/docs",
-        "redoc": "/redoc"
+        "message": "Welcome to Reserveat API",  # Valor fijo
+        "version": settings.APP_VERSION
     }

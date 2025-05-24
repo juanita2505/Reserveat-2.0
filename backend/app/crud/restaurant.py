@@ -9,20 +9,15 @@ def get_restaurants(
     db: Session,
     skip: int = 0,
     limit: int = 100,
-    filters: Optional[List] = None,
     search: Optional[str] = None,
     cuisine_types: Optional[List[str]] = None,
     price_ranges: Optional[List[int]] = None,
-    is_open_now: Optional[bool] = None
-):
+    is_open_now: Optional[bool] = None,
+    owner_id: Optional[int] = None
+) -> list[Restaurant]:
+    """Busca restaurantes con múltiples filtros"""
     query = db.query(Restaurant)
     
-    # Aplicar filtros básicos
-    if filters:
-        for filter in filters:
-            query = query.filter(filter)
-    
-    # Búsqueda por nombre o dirección
     if search:
         query = query.filter(
             or_(
@@ -32,15 +27,12 @@ def get_restaurants(
             )
         )
     
-    # Filtro por tipo de cocina
     if cuisine_types:
         query = query.filter(Restaurant.cuisine_type.in_(cuisine_types))
     
-    # Filtro por rango de precios
     if price_ranges:
         query = query.filter(Restaurant.price_range.in_(price_ranges))
     
-    # Filtro por restaurantes abiertos ahora
     if is_open_now:
         now = datetime.now().time()
         query = query.filter(
@@ -50,19 +42,33 @@ def get_restaurants(
             )
         )
     
+    if owner_id:
+        query = query.filter(Restaurant.owner_id == owner_id)
+    
     return query.offset(skip).limit(limit).all()
 
-def get_restaurant(db: Session, restaurant_id: int):
+def get_restaurant(db: Session, restaurant_id: int) -> Optional[Restaurant]:
+    """Obtiene un restaurante por ID"""
     return db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
 
-def create_restaurant(db: Session, restaurant: RestaurantCreate, owner_id: int):
+def create_restaurant(
+    db: Session, 
+    restaurant: RestaurantCreate, 
+    owner_id: int
+) -> Restaurant:
+    """Crea un nuevo restaurante"""
     db_restaurant = Restaurant(**restaurant.dict(), owner_id=owner_id)
     db.add(db_restaurant)
     db.commit()
     db.refresh(db_restaurant)
     return db_restaurant
 
-def update_restaurant(db: Session, restaurant_id: int, restaurant: RestaurantUpdate):
+def update_restaurant(
+    db: Session, 
+    restaurant_id: int, 
+    restaurant: RestaurantUpdate
+) -> Optional[Restaurant]:
+    """Actualiza un restaurante existente"""
     db_restaurant = get_restaurant(db, restaurant_id)
     if db_restaurant:
         update_data = restaurant.dict(exclude_unset=True)
@@ -72,7 +78,8 @@ def update_restaurant(db: Session, restaurant_id: int, restaurant: RestaurantUpd
         db.refresh(db_restaurant)
     return db_restaurant
 
-def delete_restaurant(db: Session, restaurant_id: int):
+def delete_restaurant(db: Session, restaurant_id: int) -> bool:
+    """Elimina un restaurante"""
     db_restaurant = get_restaurant(db, restaurant_id)
     if db_restaurant:
         db.delete(db_restaurant)
@@ -80,5 +87,9 @@ def delete_restaurant(db: Session, restaurant_id: int):
         return True
     return False
 
-def get_restaurants_by_owner(db: Session, owner_id: int):
+def get_restaurants_by_owner(
+    db: Session, 
+    owner_id: int
+) -> list[Restaurant]:
+    """Obtiene todos los restaurantes de un dueño"""
     return db.query(Restaurant).filter(Restaurant.owner_id == owner_id).all()

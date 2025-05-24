@@ -1,44 +1,38 @@
 ﻿# Etapa de construcción
-FROM python:3.10-slim as builder
+FROM python:3.9-slim as builder
 
 WORKDIR /app
 
 # Instalar dependencias del sistema
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    libpq-dev && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
     rm -rf /var/lib/apt/lists/*
+    
+RUN pip install email-validator
 
-# Crear entorno virtual
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Instalar dependencias
+# Instalar dependencias de Python
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --user -r requirements.txt
 
 # Etapa final
-FROM python:3.10-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copiar entorno virtual desde builder
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copiar aplicación
+# Copiar dependencias instaladas
+COPY --from=builder /root/.local /root/.local
 COPY . .
 
-# Variables de entorno
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
+# Asegurar que los scripts en .local sean ejecutables
+ENV PATH=/root/.local/bin:$PATH
 
-# Exponer puerto
-EXPOSE ${PORT}
+# Variables de entorno
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV DEBUG=False
+
+# Puerto de la aplicación
+EXPOSE 8000
 
 # Comando de inicio
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
