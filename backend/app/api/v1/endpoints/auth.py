@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 from typing import Optional
+from pydantic import BaseModel, EmailStr, Field
+import logging
 
-from app.schemas.user import UserCreate, User
+from app.schemas.user import User
 from app.crud.user import create_user, get_user_by_email
 from app.core.security import (
     get_password_hash,
@@ -20,15 +22,69 @@ router = APIRouter(
     tags=["auth"]
 )
 
-@router.post("/login", summary="User login")
+logger = logging.getLogger(__name__)
+
+# Modelos Pydantic
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8, example="SecurePassword123")
+    full_name: str = Field(..., min_length=2, example="John Doe")
+    role: str = Field(default="customer")
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+async def register(
+    user_data: UserRegister,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Register a new user account.
+    Required fields:
+    - email: valid email address
+    - password: at least 8 characters
+    - full_name: at least 2 characters
+    Optional field:
+    - role: defaults to 'customer'
+    """
+    try:
+        # Verificar si el usuario ya existe
+        db_user = await get_user_by_email(db, email=user_data.email)
+        if db_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        
+        # Crear el usuario
+        user = await create_user(db=db, user=user_data)
+        return user
+        
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed. Please try again."
+        )
+
+@router.post("/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Authenticate user and return access token.
+    Uses standard OAuth2 password flow.
+    Required form data:
+    - username: user's email
+    - password: user's password
     """
-    user = get_user_by_email(db, form_data.username)
+    user = await get_user_by_email(db, email=form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -38,48 +94,20 @@ async def login(
     
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        subject=str(user.id),
+        data={"sub": str(user.id)},
         expires_delta=access_token_expires
     )
     
     return {
         "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role
-        }
+        "token_type": "bearer"
     }
-
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
-async def register(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    """
-    Create new user account.
-    """
-    db_user = get_user_by_email(db, email=user_data.email)
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-    
-    # Set default role to CUSTOMER if not provided
-    if not user_data.role:
-        user_data.role = "customer"
-    
-    user = create_user(db=db, user=user_data)
-    return user
 
 @router.get("/me", response_model=User)
 async def read_user_me(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get current user information.
+    Get current authenticated user's information
     """
     return current_user

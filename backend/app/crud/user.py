@@ -1,39 +1,42 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from app.models.user import User  # Importamos el modelo User
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash
-from typing import Optional
+from typing import Optional, List
 
-def get_user(db: Session, user_id: int) -> Optional[User]:
-    """Obtiene un usuario por ID"""
-    return db.query(User).filter(User.id == user_id).first()
+async def get_user(db: AsyncSession, user_id: int) -> Optional[User]:
+    """Obtiene un usuario por ID (asíncrono)"""
+    result = await db.execute(select(User).filter(User.id == user_id))
+    return result.scalar_one_or_none()
 
-def get_user_by_email(db: Session, email: str) -> Optional[User]:
-    """Obtiene un usuario por email"""
-    return db.query(User).filter(User.email == email).first()
+async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
+    """Obtiene un usuario por email (asíncrono)"""
+    result = await db.execute(select(User).filter(User.email == email))
+    return result.scalar_one_or_none()
 
-def get_users(
-    db: Session, 
+async def get_users(
+    db: AsyncSession, 
     skip: int = 0, 
     limit: int = 100,
     search: Optional[str] = None
-) -> list[User]:
-    """Lista usuarios con paginación y búsqueda"""
-    query = db.query(User)
+) -> List[User]:
+    """Lista usuarios con paginación y búsqueda (asíncrono)"""
+    query = select(User)
     
     if search:
-        query = query.filter(
+        query = query.where(
             or_(
                 User.email.ilike(f"%{search}%"),
                 User.full_name.ilike(f"%{search}%")
             )
         )
     
-    return query.offset(skip).limit(limit).all()
+    result = await db.execute(query.offset(skip).limit(limit))
+    return result.scalars().all()
 
-def create_user(db: Session, user: UserCreate) -> User:
-    """Crea un nuevo usuario"""
+async def create_user(db: AsyncSession, user: UserCreate) -> User:
+    """Crea un nuevo usuario (asíncrono)"""
     hashed_password = get_password_hash(user.password)
     db_user = User(
         email=user.email,
@@ -43,17 +46,17 @@ def create_user(db: Session, user: UserCreate) -> User:
         is_active=True
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    await db.commit()
+    await db.refresh(db_user)
     return db_user
 
-def update_user(
-    db: Session, 
+async def update_user(
+    db: AsyncSession, 
     user_id: int, 
     user: UserUpdate
 ) -> Optional[User]:
-    """Actualiza un usuario existente"""
-    db_user = get_user(db, user_id)
+    """Actualiza un usuario existente (asíncrono)"""
+    db_user = await get_user(db, user_id)
     if db_user:
         update_data = user.dict(exclude_unset=True)
         
@@ -63,15 +66,15 @@ def update_user(
         for key, value in update_data.items():
             setattr(db_user, key, value)
         
-        db.commit()
-        db.refresh(db_user)
+        await db.commit()
+        await db.refresh(db_user)
     return db_user
 
-def delete_user(db: Session, user_id: int) -> bool:
-    """Elimina un usuario"""
-    db_user = get_user(db, user_id)
+async def delete_user(db: AsyncSession, user_id: int) -> bool:
+    """Elimina un usuario (asíncrono)"""
+    db_user = await get_user(db, user_id)
     if db_user:
-        db.delete(db_user)
-        db.commit()
+        await db.delete(db_user)
+        await db.commit()
         return True
     return False
