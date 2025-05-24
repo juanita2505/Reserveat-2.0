@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from app.models.user import User
+from app.models.user import User  # Importamos el modelo User
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash
 from typing import Optional
@@ -39,7 +39,8 @@ def create_user(db: Session, user: UserCreate) -> User:
         email=user.email,
         hashed_password=hashed_password,
         full_name=user.full_name,
-        role=user.role
+        role=user.role,
+        is_active=True
     )
     db.add(db_user)
     db.commit()

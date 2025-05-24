@@ -54,6 +54,18 @@ def create_access_token(
             detail="Could not create token"
         )
 
+def decode_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return payload
+    except JWTError as e:
+        logger.error(f"JWT Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
 # Autenticación
 async def get_current_user(
     request: Request,
@@ -67,7 +79,7 @@ async def get_current_user(
     )
     
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = decode_token(token)
         user_id: str = payload.get("sub")
         if not user_id:
             raise credentials_exception
@@ -78,8 +90,8 @@ async def get_current_user(
             
         request.state.user = user
         return user
-    except JWTError as e:
-        logger.error(f"JWT Error: {e}")
+    except Exception as e:
+        logger.error(f"Authentication error: {e}")
         raise credentials_exception
 
 async def get_current_active_user(
