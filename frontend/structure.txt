@@ -1,0 +1,36 @@
+C:\Users\Usuario\Reserveat\frontend
+├── angular.json
+├── package-lock.json
+├── package.json
+├── public
+|  └── favicon.ico
+├── README.md
+├── src
+|  ├── app
+|  |  ├── app.component.html
+|  |  ├── app.component.scss
+|  |  ├── app.component.ts
+|  |  ├── app.config.ts
+|  |  ├── app.routes.ts
+|  |  ├── auth
+|  |  ├── core
+|  |  ├── home
+|  |  ├── owner
+|  |  ├── reservations
+|  |  ├── restaurants
+|  |  ├── shared
+|  |  └── user
+|  ├── assets
+|  ├── environments
+|  |  ├── environment.prod.ts
+|  |  └── environment.ts
+|  ├── index.html
+|  ├── main.ts
+|  └── styles.scss
+├── tsconfig.app.json
+├── tsconfig.json
+└── tsconfig.spec.json
+
+directory: 1159 file: 3376
+
+ignored: directory (138)
