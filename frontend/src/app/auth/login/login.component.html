@@ -1,1 +1,26 @@
-<p>login works!</p>
+<div class="auth-container">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+    <h2>Iniciar Sesión</h2>
+    
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" formControlName="email">
+      <small *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+        Email inválido
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" formControlName="password">
+    </div>
+
+    <button type="submit" [disabled]="loginForm.invalid">Ingresar</button>
+
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <a routerLink="/register">¿No tienes cuenta? Regístrate</a>
+  </form>
+</div>
