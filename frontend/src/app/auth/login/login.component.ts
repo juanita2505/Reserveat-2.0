@@ -1,103 +1,91 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
+import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LoadingComponent } from '../../shared/components/loading/loading.component';
-import { AlertComponent } from '../../shared/components/alert/alert.component';
-import { Subscription } from 'rxjs';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '@app/core/services/auth.service';
+import { finalize } from 'rxjs/operators';
+import { AlertComponent } from '@app/shared/components/alert/alert.component';
+import { LoadingComponent } from '@app/shared/components/loading/loading.component';
 
 @Component({
+  selector: 'app-login',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
     CommonModule,
-    RouterModule,
-    LoadingComponent,
-    AlertComponent
+    ReactiveFormsModule,
+    AlertComponent,
+    LoadingComponent
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent implements OnInit, OnDestroy {
-  loginForm = new FormGroup({
-    email: new FormControl('', [Validators.required, Validators.email]),
-    password: new FormControl('', [
-      Validators.required,
-      Validators.minLength(8),
-      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
-    ])
-  });
-
+export class LoginComponent {
+  loginForm: FormGroup;
   isLoading = false;
   errorMessage: string | null = null;
-  private authSubscription: Subscription | null = null;
 
   constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
-
-  ngOnInit(): void {
-    if (this.authService.isAuthenticated()) {
-      this.redirectBasedOnRole();
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.authSubscription?.unsubscribe();
+    @Inject(AuthService) private readonly authService: AuthService,
+    private readonly fb: FormBuilder,
+    private readonly router: Router
+  ) {
+    this.loginForm = this.fb.group({
+      email: ['', [
+        Validators.required,
+        Validators.email,
+        Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)
+      ]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8)
+      ]]
+    });
   }
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
-      this.markAllAsTouched();
+      this.markFormGroupTouched(this.loginForm);
       return;
     }
 
     this.isLoading = true;
     this.errorMessage = null;
 
-    const { email, password } = this.loginForm.value;
+    const credentials = {
+      email: this.loginForm.value.email.trim(),
+      password: this.loginForm.value.password
+    };
 
-    this.authSubscription = this.authService.login(email!, password!).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.redirectBasedOnRole();
-      },
-      error: (error) => {
-        this.isLoading = false;
-        this.handleError(error);
+    this.authService.login(credentials)
+      .pipe(
+        finalize(() => this.isLoading = false)
+      )
+      .subscribe({
+        next: () => this.handleLoginSuccess(),
+        error: (error) => this.handleLoginError(error)
+      });
+  }
+
+  private handleLoginSuccess(): void {
+    if (this.authService.isAdmin()) {
+      this.router.navigate(['/admin/dashboard']);
+    } else {
+      this.router.navigate(['/home']);
+    }
+  }
+
+  private handleLoginError(error: any): void {
+    this.errorMessage = error.message || 'Error desconocido durante el login';
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
       }
     });
-  }
-
-  private redirectBasedOnRole(): void {
-    const userRole = this.authService.getCurrentUserRole();
-
-    switch (userRole) {
-      case 'restaurant_owner':
-        this.router.navigate(['/owner/dashboard']);
-        break;
-      case 'admin':
-        this.router.navigate(['/admin/dashboard']);
-        break;
-      default:
-        this.router.navigate(['/home']);
-    }
-  }
-
-  private markAllAsTouched(): void {
-    Object.values(this.loginForm.controls).forEach(control => control.markAsTouched());
-  }
-
-  private handleError(error: any): void {
-    if (error.status === 401) {
-      this.errorMessage = 'Credenciales inválidas. Por favor, inténtalo de nuevo.';
-    } else if (error.status === 0) {
-      this.errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
-    } else {
-      this.errorMessage = 'Ocurrió un error inesperado. Por favor, inténtalo más tarde.';
-    }
   }
 
   get email() {
