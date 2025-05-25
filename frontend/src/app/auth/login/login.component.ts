@@ -15,6 +15,7 @@ export class LoginComponent {
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', Validators.required)
   });
+  errorMessage: string | null = null; // Añadimos la propiedad errorMessage
 
   constructor(
     private auth: AuthService,
@@ -26,8 +27,11 @@ export class LoginComponent {
       const { email, password } = this.loginForm.value;
       this.auth.login(email!, password!).subscribe({
         next: () => this.router.navigate(['/restaurants']),
-        error: (err) => console.error('Login failed:', err)
-      });
-    }
-  }
+        error: (err: any) => { // Tipamos el parámetro err
+          this.errorMessage = 'Login failed';
+          console.error('Login failed:', err);
+        }
+      });
+    }
+  }
 }

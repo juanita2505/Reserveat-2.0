@@ -1,26 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RestaurantService } from '../../core/services/restaurant.service';
-import { RouterModule } from '@angular/router';
+import { RestaurantService } from '../../shared/services/restaurant.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  templateUrl: './restaurant-list.component.html'
+  imports: [CommonModule],
+  template: `
+    <div *ngIf="restaurants.length > 0">
+      <div *ngFor="let r of restaurants">
+        {{ r.name }} - {{ r.address }}
+      </div>
+    </div>
+  `
 })
-export class RestaurantListComponent implements OnInit {
+export class RestaurantListComponent {
   restaurants: any[] = [];
-  loading = true;
+  private restaurantService = inject(RestaurantService);
 
-  constructor(private restaurantService: RestaurantService) {}
-
-  ngOnInit(): void {
+  constructor() {
     this.restaurantService.getAll().subscribe({
-      next: (data) => {
-        this.restaurants = data;
-        this.loading = false;
-      },
-      error: () => this.loading = false
-    });
-  }
+      next: (data: any) => this.restaurants = data,
+      error: (err) => console.error('Error:', err)
+    });
+  }
 }

@@ -2,9 +2,8 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,  
-  imports: [RouterOutlet, NavbarComponent],  
-  templateUrl: './app.component.html'
+  standalone: true,
+  imports: [RouterOutlet], // Solo RouterOutlet, eliminamos NavbarComponent
+  template: `<router-outlet></router-outlet>`
 })
 export class AppComponent {}
