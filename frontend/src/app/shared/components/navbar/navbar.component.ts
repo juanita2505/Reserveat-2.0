@@ -1,18 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from 'src/app/core/services/auth.service';
+import { RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   standalone: true,
   selector: 'app-navbar',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent {
-  constructor(public auth: AuthService) {}
+  private auth = inject(AuthService);
 
   logout(): void {
-    this.auth.logout();
+    if (this.auth) {
+      this.auth.logout();
+    }
   }
 }

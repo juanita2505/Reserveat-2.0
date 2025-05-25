@@ -3,9 +3,9 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
 import { AlertComponent } from '../../shared/components/alert/alert.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   standalone: true,

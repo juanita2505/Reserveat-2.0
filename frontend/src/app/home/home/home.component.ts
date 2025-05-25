@@ -9,6 +9,7 @@ interface Restaurant {
   cuisine: string;
   priceRange: string;
   reviews: number;
+  rating?: number; // Propiedad opcional añadida
 }
 
 @Component({
@@ -19,6 +20,7 @@ interface Restaurant {
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent {
+  // Datos de ejemplo mejorados con rating
   featuredRestaurants: Restaurant[] = [
     {
       id: 1,
@@ -26,7 +28,8 @@ export class HomeComponent {
       image: 'assets/restaurants/restaurant1.jpg',
       cuisine: 'Internacional',
       priceRange: '$$$',
-      reviews: 124
+      reviews: 124,
+      rating: 4.5
     },
     {
       id: 2,
@@ -34,7 +37,8 @@ export class HomeComponent {
       image: 'assets/restaurants/restaurant2.jpg',
       cuisine: 'Japonés',
       priceRange: '$$',
-      reviews: 89
+      reviews: 89,
+      rating: 4.7
     },
     {
       id: 3,
@@ -42,7 +46,8 @@ export class HomeComponent {
       image: 'assets/restaurants/restaurant3.jpg',
       cuisine: 'Italiano',
       priceRange: '$$',
-      reviews: 156
+      reviews: 156,
+      rating: 4.3
     },
     {
       id: 4,
@@ -50,7 +55,16 @@ export class HomeComponent {
       image: 'assets/restaurants/restaurant4.jpg',
       cuisine: 'Carnes',
       priceRange: '$$$',
-      reviews: 201
+      reviews: 201,
+      rating: 4.8
     }
   ];
+
+  // Método para generar estrellas (opcional)
+  getStars(rating: number | undefined): string {
+    if (!rating) return '★★★★★';
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5 ? '½' : '';
+    return '★'.repeat(fullStars) + halfStar + '☆'.repeat(5 - fullStars - (halfStar ? 1 : 0));
+  }
 }
