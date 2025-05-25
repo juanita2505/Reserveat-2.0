@@ -5,13 +5,24 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
+  
 })
 export class AuthService {
+  private apiUrl = 'http://localhost:8000/api/auth';
   private authUrl = 'api/auth';
   private loggedIn = new BehaviorSubject<boolean>(false);
   private currentUserRole = new BehaviorSubject<string>('user'); // 'user' o 'admin'
 
   constructor(private http: HttpClient, private router: Router) {}
+
+  register(userData: { 
+  full_name: string;  
+  email: string; 
+  password: string;
+  role:string; 
+}): Observable<any> {
+  return this.http.post(`${this.apiUrl}/register`, userData);
+}
 
   login(credentials: {email: string, password: string}): Observable<any> {
     return this.http.post(`${this.authUrl}/login`, credentials).pipe(

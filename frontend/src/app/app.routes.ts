@@ -1,12 +1,11 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
+import { HomeComponent } from './home/home/home.component'; 
+import { LoginComponent } from './auth/login/login.component';
+import { RegisterComponent } from './auth/register/register.component';
 
 export const routes: Routes = [
-  {
-    path: '',
-    loadComponent: () =>
-      import('./home/home/home.component').then((m) => m.HomeComponent),
-  },
+  { path: '', component: HomeComponent },
   {
     path: 'restaurants',
     loadComponent: () =>
