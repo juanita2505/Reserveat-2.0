@@ -10,7 +10,7 @@ import { AlertComponent } from '../../shared/components/alert/alert.component';
 @Component({
   standalone: true,
   imports: [
-    ReactiveFormsModule, 
+    ReactiveFormsModule,
     CommonModule,
     RouterModule,
     LoadingComponent,
@@ -56,11 +56,12 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     this.isLoading = true;
     this.errorMessage = null;
-    
+
     const { email, password } = this.loginForm.value;
 
     this.authSubscription = this.authService.login(email!, password!).subscribe({
       next: () => {
+        this.isLoading = false;
         this.redirectBasedOnRole();
       },
       error: (error) => {
@@ -72,8 +73,8 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   private redirectBasedOnRole(): void {
     const userRole = this.authService.getCurrentUserRole();
-    
-    switch(userRole) {
+
+    switch (userRole) {
       case 'restaurant_owner':
         this.router.navigate(['/owner/dashboard']);
         break;
@@ -86,9 +87,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   private markAllAsTouched(): void {
-    Object.values(this.loginForm.controls).forEach(control => {
-      control.markAsTouched();
-    });
+    Object.values(this.loginForm.controls).forEach(control => control.markAsTouched());
   }
 
   private handleError(error: any): void {

@@ -10,7 +10,7 @@ import { AlertComponent } from '../../shared/components/alert/alert.component';
 @Component({
   standalone: true,
   imports: [
-    ReactiveFormsModule, 
+    ReactiveFormsModule,
     CommonModule,
     RouterModule,
     LoadingComponent,
@@ -38,24 +38,13 @@ export class RegisterComponent implements OnInit, OnDestroy {
       Validators.required
     ]),
     role: new FormControl('customer')
-  }, { validators: this.passwordMatchValidator() }); // Cambio importante aquí
+  }, { validators: this.passwordMatchValidator() });
 
-  // Resto del código permanece igual...
-  
-  private passwordMatchValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const formGroup = control as FormGroup;
-      const password = formGroup.get('password')?.value;
-      const confirmPassword = formGroup.get('confirmPassword')?.value;
-      
-      return password === confirmPassword ? null : { mismatch: true };
-    };
-  }
+  private authSubscription: Subscription | null = null;
 
   isLoading = false;
   errorMessage: string | null = null;
-  showRoleSelector = false; // Controla si mostrar el selector de rol
-  private authSubscription: Subscription | null = null;
+  showRoleSelector = false;
 
   constructor(
     private authService: AuthService,
@@ -63,7 +52,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Opcional: Mostrar selector de rol solo en ciertas condiciones
     this.showRoleSelector = !this.router.url.includes('owner');
   }
 
@@ -79,17 +67,21 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
     this.isLoading = true;
     this.errorMessage = null;
-    
-    const { fullName, email, password, role } = this.registerForm.value;
+
+    const fullName = this.fullName?.value!;
+    const email = this.email?.value!;
+    const password = this.password?.value!;
+    const role = this.role?.value!;
 
     this.authSubscription = this.authService.register({
-      full_name: fullName!,
-      email: email!,
-      password: password!,
-      role: role!
+      full_name: fullName,
+      email,
+      password,
+      role
     }).subscribe({
       next: () => {
-        this.router.navigate(['/verify-email']); // O redirigir a otra página
+        this.isLoading = false;
+        this.router.navigate(['/verify-email']);
       },
       error: (error) => {
         this.isLoading = false;
@@ -99,9 +91,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   private markAllAsTouched(): void {
-    Object.values(this.registerForm.controls).forEach(control => {
-      control.markAsTouched();
-    });
+    Object.values(this.registerForm.controls).forEach(control => control.markAsTouched());
   }
 
   private handleError(error: any): void {
@@ -114,22 +104,28 @@ export class RegisterComponent implements OnInit, OnDestroy {
     }
   }
 
+  private passwordMatchValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const formGroup = control as FormGroup;
+      const password = formGroup.get('password')?.value;
+      const confirmPassword = formGroup.get('confirmPassword')?.value;
+      return password === confirmPassword ? null : { mismatch: true };
+    };
+  }
+
+  // Getters para acceso limpio en el template
   get fullName() {
     return this.registerForm.get('fullName');
   }
-
   get email() {
     return this.registerForm.get('email');
   }
-
   get password() {
     return this.registerForm.get('password');
   }
-
   get confirmPassword() {
     return this.registerForm.get('confirmPassword');
   }
-
   get role() {
     return this.registerForm.get('role');
   }

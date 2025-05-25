@@ -15,9 +15,10 @@ export const routes: Routes = [
       ),
     canActivate: [AuthGuard]
   },
-  // Redirección inicial a login
+
+  // Redirección por defecto a login
   { path: '', redirectTo: '/login', pathMatch: 'full' },
 
-  // Ruta comodín por si acceden a una ruta no existente
-  { path: '', redirectTo: '/login' }
+  // Ruta comodín para rutas no existentes - redirige a login
+  { path: '**', redirectTo: '/login' }
 ];
