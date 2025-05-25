@@ -1,15 +1,41 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Frontend</title>
+  <title>Reserveat</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Frontend Angular application">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Sistema de reservas de restaurantes">
+  <meta name="theme-color" content="#1976d2">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="manifest" href="manifest.webmanifest">
+  
+  <!-- Preload de fuentes principales -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <!-- Estilos iniciales para evitar FOUC -->
+  <style>
+    body {
+      margin: 0;
+      font-family: Roboto, "Helvetica Neue", sans-serif;
+      background-color: #fafafa;
+    }
+    app-root {
+      display: block;
+      min-height: 100vh;
+    }
+  </style>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root>
+    <!-- Mensaje de carga inicial -->
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+      <div style="text-align: center;">
+        <h1>Reserveat</h1>
+        <p>Cargando aplicación...</p>
+      </div>
+    </div>
+  </app-root>
 </body>
 </html>
