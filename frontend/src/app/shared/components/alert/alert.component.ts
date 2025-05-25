@@ -5,12 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-alert',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="alert" [class]="'alert-' + type" *ngIf="message">
-      <span>{{ message }}</span>
-      <button *ngIf="dismissible" (click)="onDismiss()" class="close-btn">&times;</button>
-    </div>
-  `,
+  templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss']
 })
 export class AlertComponent {

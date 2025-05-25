@@ -1,0 +1,43 @@
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  position: relative;
+  font-family: Arial, sans-serif;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &-success {
+    background-color: #4caf50;
+  }
+
+  &-error {
+    background-color: #f44336;
+  }
+
+  &-info {
+    background-color: #2196f3;
+  }
+
+  &-warning {
+    background-color: #ff9800;
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    margin-left: 1rem;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #ddd;
+    }
+  }
+}

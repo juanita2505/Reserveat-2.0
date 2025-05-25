@@ -14,7 +14,7 @@ interface Reservation {
 
 @Injectable({ providedIn: 'root' })
 export class ReservationService {
-  private readonly API_URL = ${environment.apiUrl}/reservations;
+  private readonly API_URL = `${environment.apiUrl}/reservations`; 
 
   constructor(private http: HttpClient) {}
 
@@ -27,6 +27,6 @@ export class ReservationService {
   }
 
   cancel(id: number): Observable<void> {
-    return this.http.patch<void>(${this.API_URL}/${id}/cancel, {});
-  }
+    return this.http.patch<void>(`${this.API_URL}/${id}/cancel`, {}); 
+  }
 }

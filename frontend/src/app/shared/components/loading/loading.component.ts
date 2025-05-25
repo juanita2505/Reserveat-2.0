@@ -5,17 +5,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-loading',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="loading-container" 
-         [class.small]="size === 'small'"
-         [class.medium]="size === 'medium'" 
-         [class.large]="size === 'large'">
-      <div class="loading-spinner"></div>
-      @if (showText) {
-        <span class="loading-text">{{ text }}</span>
-      }
-    </div>
-  `,
+  templateUrl: './loading.component.html',
   styleUrls: ['./loading.component.scss']
 })
 export class LoadingComponent {

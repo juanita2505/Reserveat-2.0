@@ -1,1 +1,4 @@
-<!-- alert component -->
+<div class="alert" [class]="'alert-' + type" *ngIf="message">
+  <span>{{ message }}</span>
+  <button *ngIf="dismissible" (click)="onDismiss()" class="close-btn">&times;</button>
+</div>
