@@ -33,7 +33,6 @@
     "strictInputTypes": true,
     "strictNullInputTypes": true
   },
-  "files": [],
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
