@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 
+// Definición de rutas principales de la aplicación
 export const routes: Routes = [
   {
     path: 'login',
@@ -13,7 +14,7 @@ export const routes: Routes = [
       import('./restaurants/restaurant-list/restaurant-list.component').then(
         m => m.RestaurantListComponent
       ),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard]  // Protege la ruta con autenticación
   },
 
   // Redirección por defecto a login
