@@ -58,6 +58,15 @@ async def get_users(
         logger.error(f"Error listing users: {str(e)}")
         raise
 
+async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
+    """Obtiene un usuario por username"""
+    try:
+        result = await db.execute(select(User).where(User.username == username))
+        return result.scalar_one_or_none()
+    except Exception as e:
+        logger.error(f"Error getting user by username {username}: {str(e)}")
+        raise
+
 async def create_user(
     db: AsyncSession, 
     user_data: Union[UserCreate, UserRegister]
@@ -74,6 +83,7 @@ async def create_user(
             logger.warning(f"Invalid role '{user_data.role}', defaulting to CUSTOMER")
 
         db_user = User(
+            username=user_data.username,
             email=user_data.email,
             hashed_password=hashed_password,
             full_name=user_data.full_name,
@@ -87,9 +97,7 @@ async def create_user(
         return db_user
         
     except Exception as e:
-        await db.rollback()
-        logger.error(f"Error creating user: {str(e)}")
-        raise
+        raise e
 
 async def update_user(
     db: AsyncSession, 

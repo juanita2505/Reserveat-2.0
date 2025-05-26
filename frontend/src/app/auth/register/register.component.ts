@@ -1,13 +1,12 @@
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { 
-  FormControl, 
-  FormGroup, 
-  Validators, 
-  AbstractControl, 
-  ValidationErrors, 
-  ValidatorFn, 
-  ReactiveFormsModule 
+import {
+  FormControl,
+  FormGroup,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+  ReactiveFormsModule
 } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
@@ -48,7 +47,7 @@ export class RegisterComponent implements OnDestroy {
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
     role: new FormControl('customer')
-  }, { validators: this.passwordMatchValidator });
+  }, { validators: RegisterComponent.passwordMatchValidator });
 
   private authSubscription?: Subscription;
   isLoading = false;
@@ -71,7 +70,11 @@ export class RegisterComponent implements OnDestroy {
 
     const { fullName, email, password, role } = this.registerForm.value;
 
+    // ⚠️ username generado automáticamente
+    const username = fullName?.trim().toLowerCase().replace(/\s+/g, '') || `user${Date.now()}`;
+
     this.authSubscription = this.authService.register({
+      username: username,
       full_name: fullName?.trim() ?? '',
       email: email?.trim() ?? '',
       password: password ?? '',
@@ -100,7 +103,7 @@ export class RegisterComponent implements OnDestroy {
 
   private handleError(error: any): void {
     console.error('Registration error:', error);
-    
+
     if (error.status === 400 && error.error?.detail === "Email already registered") {
       this.errorMessage = 'Este correo electrónico ya está registrado';
       this.registerForm.get('email')?.setErrors({ emailTaken: true });
@@ -111,13 +114,13 @@ export class RegisterComponent implements OnDestroy {
     }
   }
 
-  private passwordMatchValidator(form: AbstractControl): ValidationErrors | null {
+  private static passwordMatchValidator(form: AbstractControl): ValidationErrors | null {
     const password = form.get('password')?.value;
     const confirmPassword = form.get('confirmPassword')?.value;
     return password === confirmPassword ? null : { mismatch: true };
   }
 
-  // Getters para acceder fácilmente a los controles del formulario
+  // Getters
   get fullName() { return this.registerForm.get('fullName'); }
   get email() { return this.registerForm.get('email'); }
   get password() { return this.registerForm.get('password'); }
