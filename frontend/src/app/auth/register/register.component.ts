@@ -1,6 +1,14 @@
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn, ReactiveFormsModule } from '@angular/forms';
+import { 
+  FormControl, 
+  FormGroup, 
+  Validators, 
+  AbstractControl, 
+  ValidationErrors, 
+  ValidatorFn, 
+  ReactiveFormsModule 
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
 import { Subscription } from 'rxjs';
@@ -40,7 +48,7 @@ export class RegisterComponent implements OnDestroy {
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
     role: new FormControl('customer')
-  }, { validators: this.passwordMatchValidator() });
+  }, { validators: this.passwordMatchValidator });
 
   private authSubscription?: Subscription;
   isLoading = false;
@@ -72,7 +80,7 @@ export class RegisterComponent implements OnDestroy {
       finalize(() => this.isLoading = false)
     ).subscribe({
       next: () => {
-        // Navigation handled by auth service after successful registration
+        this.router.navigate(['/auth/login']);
       },
       error: (error) => {
         this.handleError(error);
@@ -85,31 +93,34 @@ export class RegisterComponent implements OnDestroy {
   }
 
   private markAllAsTouched(): void {
-    Object.values(this.registerForm.controls).forEach(control => control.markAsTouched());
+    Object.values(this.registerForm.controls).forEach(control => {
+      control.markAsTouched();
+    });
   }
 
   private handleError(error: any): void {
+    console.error('Registration error:', error);
+    
     if (error.status === 400 && error.error?.detail === "Email already registered") {
       this.errorMessage = 'Este correo electrónico ya está registrado';
+      this.registerForm.get('email')?.setErrors({ emailTaken: true });
     } else if (error.status === 0) {
-      this.errorMessage = 'Error de conexión con el servidor';
+      this.errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión.';
     } else {
-      this.errorMessage = error.error?.message || 'Error en el registro';
+      this.errorMessage = error.error?.message || 'Error en el registro. Por favor intenta nuevamente.';
     }
   }
 
-  private passwordMatchValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const formGroup = control as FormGroup;
-      const password = formGroup.get('password')?.value;
-      const confirmPassword = formGroup.get('confirmPassword')?.value;
-      return password === confirmPassword ? null : { mismatch: true };
-    };
+  private passwordMatchValidator(form: AbstractControl): ValidationErrors | null {
+    const password = form.get('password')?.value;
+    const confirmPassword = form.get('confirmPassword')?.value;
+    return password === confirmPassword ? null : { mismatch: true };
   }
 
+  // Getters para acceder fácilmente a los controles del formulario
   get fullName() { return this.registerForm.get('fullName'); }
   get email() { return this.registerForm.get('email'); }
   get password() { return this.registerForm.get('password'); }
   get confirmPassword() { return this.registerForm.get('confirmPassword'); }
-  get role() { return this.registerForm.get('role'); }
+  get role() { return this.registerForm.get('role'); }
 }
