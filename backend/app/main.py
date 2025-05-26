@@ -39,7 +39,11 @@ app.include_router(
     prefix=settings.API_V1_STR,
     tags=["reservations"]
 )
-
+app.include_router(
+    auth.router, 
+    prefix="/api/auth", 
+    tags=["auth"]
+)
 # Evento de startup corregido para async
 @app.on_event("startup")
 async def startup():

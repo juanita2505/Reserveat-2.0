@@ -20,14 +20,10 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 # Funciones de contraseña
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception as e:
-        logger.error(f"Error verifying password: {e}")
-        return False
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
-def get_password_hash(password: str) -> str:
+def get_password_hash(password):
     return pwd_context.hash(password)
 
 # Funciones JWT

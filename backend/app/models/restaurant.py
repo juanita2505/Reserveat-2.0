@@ -8,15 +8,15 @@ class Restaurant(Base):
     __tablename__ = "restaurants"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    address = Column(String)
-    phone = Column(String)
-    description = Column(String)
-    cuisine_type = Column(Enum(CuisineType))
-    price_range = Column(Enum(PriceRange))
-    opening_time = Column(Time)
-    closing_time = Column(Time)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String(100), index=True, nullable=False)           # tamaño obligatorio
+    address = Column(String(255), nullable=False)
+    phone = Column(String(20), nullable=True)
+    description = Column(String(500), nullable=True)
+    cuisine_type = Column(Enum(CuisineType), nullable=False)
+    price_range = Column(Enum(PriceRange), nullable=False)
+    opening_time = Column(Time, nullable=False)
+    closing_time = Column(Time, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     # Relaciones
     owner = relationship("User", back_populates="restaurants")

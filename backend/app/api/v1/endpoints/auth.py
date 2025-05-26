@@ -6,10 +6,9 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 import logging
 
-from app.schemas.user import User
+from app.schemas.user import UserRead
 from app.crud.user import create_user, get_user_by_email
 from app.core.security import (
-    get_password_hash,
     verify_password,
     create_access_token,
     get_current_user
@@ -38,7 +37,7 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
-@router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserRegister,
     db: AsyncSession = Depends(get_db)
@@ -53,18 +52,14 @@ async def register(
     - role: defaults to 'customer'
     """
     try:
-        # Verificar si el usuario ya existe
         db_user = await get_user_by_email(db, email=user_data.email)
         if db_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
             )
-        
-        # Crear el usuario
         user = await create_user(db=db, user=user_data)
         return user
-        
     except Exception as e:
         logger.error(f"Registration error: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -91,21 +86,19 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)},
         expires_delta=access_token_expires
     )
-    
     return {
         "access_token": access_token,
         "token_type": "bearer"
     }
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=UserRead)
 async def read_user_me(
-    current_user: User = Depends(get_current_user)
+    current_user: UserRead = Depends(get_current_user)
 ):
     """
     Get current authenticated user's information
