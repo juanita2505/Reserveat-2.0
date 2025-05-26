@@ -7,7 +7,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://127.0.0.1:8000/api/v1/auth';
+  private apiUrl = 'http://127.0.0.1:8000/api/v1';
   private loggedIn = new BehaviorSubject<boolean>(false);
   private currentUserRole = new BehaviorSubject<string>('customer');
 
@@ -33,7 +33,7 @@ export class AuthService {
     email: string;
     password: string;
     role: string;
-    username?: string; // opcional
+    username?: string; 
   }): Observable<unknown> {
     const username = userData.username || this.generateUsername(userData.full_name);
     const payload = { ...userData, username };
@@ -80,7 +80,7 @@ export class AuthService {
     return this.currentUserRole.asObservable();
   }
 
-  // ✅ Utilidad: generar username a partir del nombre
+  // generar username a partir del nombre
   private generateUsername(fullName: string): string {
     const base = fullName.trim().toLowerCase().replace(/\s+/g, '');
     const suffix = Math.floor(Math.random() * 10000);

@@ -9,7 +9,7 @@ import { NavigationEnd } from '@angular/router'; // Importación adicional neces
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule // Asegúrate de incluirlo aquí
+    RouterModule 
   ],
   templateUrl: './auth-tabs.component.html',
   styleUrls: ['./auth-tabs.component.scss']
