@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Reserveat - Sistema de reservas de restaurantes</title>
   <base href="/">
-  
+
   <!-- Meta tags esenciales -->
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover">
   <meta name="description" content="Sistema de reservas de restaurantes. Reserva mesas en los mejores establecimientos de tu ciudad.">
@@ -12,17 +12,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Reserveat">
-  
-  <!-- Favicon y Web App Manifest -->
+
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
-  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
-  
-  <!-- Preconexión y precarga de recursos críticos -->
+
+  <!-- Preconexión y precarga de fuentes -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"></noscript>
-  
+
   <!-- Estilos críticos inline -->
   <style id="critical-css">
     :root {
@@ -92,8 +90,8 @@
           loadingScreen.style.opacity = '0';
           setTimeout(() => loadingScreen.remove(), 300);
         });
-        
-        // Fallback en caso de que la app no emita el evento
+
+        // Fallback
         setTimeout(() => {
           if (document.querySelector('app-root').children.length > 1) {
             loadingScreen.style.opacity = '0';
