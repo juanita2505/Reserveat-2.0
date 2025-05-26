@@ -1,63 +1,56 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormControl, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '@app/core/services/auth.service';
 import { Subscription } from 'rxjs';
-import { LoadingComponent } from '../../shared/components/loading/loading.component';
-import { AlertComponent } from '../../shared/components/alert/alert.component';
+import { finalize } from 'rxjs/operators';
+import { AlertComponent } from '@app/shared/components/alert/alert.component';
+import { LoadingComponent } from '@app/shared/components/loading/loading.component';
 
 @Component({
+  selector: 'app-register',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
     CommonModule,
+    ReactiveFormsModule,
     RouterModule,
-    LoadingComponent,
-    AlertComponent
+    AlertComponent,
+    LoadingComponent
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
 })
-export class RegisterComponent implements OnInit, OnDestroy {
+export class RegisterComponent implements OnDestroy {
   registerForm = new FormGroup({
     fullName: new FormControl('', [
       Validators.required,
-      Validators.minLength(3)
+      Validators.minLength(3),
+      Validators.maxLength(50)
     ]),
     email: new FormControl('', [
       Validators.required,
       Validators.email,
+      Validators.maxLength(100)
     ]),
     password: new FormControl('', [
       Validators.required,
       Validators.minLength(8),
       Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
     ]),
-    confirmPassword: new FormControl('', [
-      Validators.required
-    ]),
+    confirmPassword: new FormControl('', [Validators.required]),
     role: new FormControl('customer')
   }, { validators: this.passwordMatchValidator() });
 
-  private authSubscription: Subscription | null = null;
-
+  private authSubscription?: Subscription;
   isLoading = false;
   errorMessage: string | null = null;
-  showRoleSelector = false;
+  showRoleSelector = true;
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
-
-  ngOnInit(): void {
-    this.showRoleSelector = !this.router.url.includes('owner');
-  }
-
-  ngOnDestroy(): void {
-    this.authSubscription?.unsubscribe();
-  }
 
   onSubmit(): void {
     if (this.registerForm.invalid) {
@@ -68,26 +61,27 @@ export class RegisterComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = null;
 
-    const fullName = this.fullName?.value!;
-    const email = this.email?.value!;
-    const password = this.password?.value!;
-    const role = this.role?.value!;
+    const { fullName, email, password, role } = this.registerForm.value;
 
     this.authSubscription = this.authService.register({
-      full_name: fullName,
-      email,
-      password,
-      role
-    }).subscribe({
+      full_name: fullName?.trim() ?? '',
+      email: email?.trim() ?? '',
+      password: password ?? '',
+      role: role ?? 'customer'
+    }).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
       next: () => {
-        this.isLoading = false;
-        this.router.navigate(['/verify-email']);
+        // Navigation handled by auth service after successful registration
       },
       error: (error) => {
-        this.isLoading = false;
         this.handleError(error);
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.authSubscription?.unsubscribe();
   }
 
   private markAllAsTouched(): void {
@@ -98,9 +92,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
     if (error.status === 400 && error.error?.detail === "Email already registered") {
       this.errorMessage = 'Este correo electrónico ya está registrado';
     } else if (error.status === 0) {
-      this.errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
+      this.errorMessage = 'Error de conexión con el servidor';
     } else {
-      this.errorMessage = 'Ocurrió un error inesperado. Por favor, inténtalo más tarde.';
+      this.errorMessage = error.error?.message || 'Error en el registro';
     }
   }
 
@@ -113,20 +107,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
     };
   }
 
-  // Getters para acceso limpio en el template
-  get fullName() {
-    return this.registerForm.get('fullName');
-  }
-  get email() {
-    return this.registerForm.get('email');
-  }
-  get password() {
-    return this.registerForm.get('password');
-  }
-  get confirmPassword() {
-    return this.registerForm.get('confirmPassword');
-  }
-  get role() {
-    return this.registerForm.get('role');
-  }
+  get fullName() { return this.registerForm.get('fullName'); }
+  get email() { return this.registerForm.get('email'); }
+  get password() { return this.registerForm.get('password'); }
+  get confirmPassword() { return this.registerForm.get('confirmPassword'); }
+  get role() { return this.registerForm.get('role'); }
 }

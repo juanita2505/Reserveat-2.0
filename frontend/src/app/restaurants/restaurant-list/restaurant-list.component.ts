@@ -1,12 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RestaurantService } from '../../shared/services/restaurant.service';
 import { RouterModule } from '@angular/router';
-import { LoadingComponent } from '../../shared/components/loading/loading.component';
+import { RestaurantService } from '../../shared/services/restaurant.service';
 
 @Component({
+  selector: 'app-restaurant-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, LoadingComponent],
+  imports: [
+    CommonModule,
+    RouterModule
+    // Remover LoadingComponent si no se usa
+  ],
   templateUrl: './restaurant-list.component.html',
   styleUrls: ['./restaurant-list.component.scss']
 })

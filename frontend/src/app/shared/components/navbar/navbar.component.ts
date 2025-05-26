@@ -16,4 +16,8 @@ export class NavbarComponent {
   logout(): void {
     this.authService.logout();
   }
+
+  get isOwner(): boolean {
+    return this.authService.userRole === 'restaurant_owner';
+  }
 }

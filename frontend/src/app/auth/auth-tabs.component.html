@@ -1,0 +1,18 @@
+<div class="auth-container">
+  <div class="tabs">
+    <button 
+      [class.active]="activeTab === 'login'"
+      (click)="navigateTo('login')">
+      Iniciar Sesión
+    </button>
+    <button
+      [class.active]="activeTab === 'register'"
+      (click)="navigateTo('register')">
+      Registrarse
+    </button>
+  </div>
+
+  <div class="tab-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

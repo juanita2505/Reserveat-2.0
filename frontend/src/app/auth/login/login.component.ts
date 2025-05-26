@@ -1,11 +1,11 @@
-import { Component, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '@app/core/services/auth.service';
 import { finalize } from 'rxjs/operators';
 import { AlertComponent } from '@app/shared/components/alert/alert.component';
 import { LoadingComponent } from '@app/shared/components/loading/loading.component';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-login',
@@ -13,6 +13,7 @@ import { LoadingComponent } from '@app/shared/components/loading/loading.compone
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterModule,
     AlertComponent,
     LoadingComponent
   ],
@@ -25,67 +26,47 @@ export class LoginComponent {
   errorMessage: string | null = null;
 
   constructor(
-    @Inject(AuthService) private readonly authService: AuthService,
-    private readonly fb: FormBuilder,
-    private readonly router: Router
+    private fb: FormBuilder,
+    private authService: AuthService,
+    private router: Router
   ) {
     this.loginForm = this.fb.group({
-      email: ['', [
-        Validators.required,
-        Validators.email,
-        Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)
-      ]],
-      password: ['', [
-        Validators.required,
-        Validators.minLength(8)
-      ]]
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
     });
   }
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
-      this.markFormGroupTouched(this.loginForm);
+      this.loginForm.markAllAsTouched();
       return;
     }
 
     this.isLoading = true;
     this.errorMessage = null;
 
-    const credentials = {
-      email: this.loginForm.value.email.trim(),
-      password: this.loginForm.value.password
-    };
+    const { email, password } = this.loginForm.value;
 
-    this.authService.login(credentials)
-      .pipe(
-        finalize(() => this.isLoading = false)
-      )
-      .subscribe({
-        next: () => this.handleLoginSuccess(),
-        error: (error) => this.handleLoginError(error)
-      });
-  }
-
-  private handleLoginSuccess(): void {
-    if (this.authService.isAdmin()) {
-      this.router.navigate(['/admin/dashboard']);
-    } else {
-      this.router.navigate(['/home']);
-    }
-  }
-
-  private handleLoginError(error: any): void {
-    this.errorMessage = error.message || 'Error desconocido durante el login';
-  }
-
-  private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.values(formGroup.controls).forEach(control => {
-      control.markAsTouched();
-
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
+    this.authService.login({ email, password }).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
+      next: () => {
+        // Navigation handled by auth service after successful login
+      },
+      error: (error) => {
+        this.handleError(error);
       }
     });
+  }
+
+  private handleError(error: any): void {
+    if (error.status === 401) {
+      this.errorMessage = 'Credenciales inválidas';
+    } else if (error.status === 0) {
+      this.errorMessage = 'Error de conexión con el servidor';
+    } else {
+      this.errorMessage = error.error?.message || 'Error al iniciar sesión';
+    }
   }
 
   get email() {
