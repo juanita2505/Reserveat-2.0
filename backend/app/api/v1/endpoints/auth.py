@@ -31,6 +31,10 @@ class UserRegister(BaseModel):
     full_name: str = Field(..., min_length=2, example="John Doe")
     role: str = Field(default="customer")
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -74,26 +78,49 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    user_login: UserLogin,  # Usamos el modelo que creamos
     db: AsyncSession = Depends(get_db)
 ):
-    # Aquí se puede usar username o email para login, pero para estandarizar, login con username
-    user = await get_user_by_username(db, form_data.username)
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        logger.info(f"Login attempt for email: {user_login.email}")
+        
+        # 1. Buscar usuario por email (case-insensitive)
+        user = await get_user_by_email(db, user_login.email)
+        if not user:
+            logger.warning(f"User not found with email: {user_login.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # 2. Verificar contraseña
+        if not verify_password(user_login.password, user.hashed_password):
+            logger.warning(f"Invalid password for user: {user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # 3. Generar token
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id)},
+            expires_delta=access_token_expires
         )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id)},
-        expires_delta=access_token_expires
-    )
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+        
+        logger.info(f"Successful login for user: {user.email}")
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except HTTPException:
+        raise  # Re-lanzamos las excepciones HTTP que ya manejamos
+    except Exception as e:
+        logger.error(f"Unexpected login error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error during login"
+        )
 
 @router.get("/me", response_model=UserRead)
 async def read_user_me(

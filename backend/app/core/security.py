@@ -19,14 +19,24 @@ oauth2_scheme = OAuth2PasswordBearer(
     scheme_name="JWT"
 )
 
-# Funciones de contraseña
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str):
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        logger.error(f"Password verification failed: {str(e)}")
+        return False
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 # Funciones JWT
+from datetime import datetime, timedelta
+from typing import Any, Optional
+import jwt
+from app.core.config import settings  # asumiendo que lo tienes así
+
 def create_access_token(
     subject: Any,
     expires_delta: Optional[timedelta] = None,
@@ -34,21 +44,22 @@ def create_access_token(
 ) -> str:
     expire_minutes = settings.REFRESH_TOKEN_EXPIRE_MINUTES if refresh else settings.ACCESS_TOKEN_EXPIRE_MINUTES
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=expire_minutes))
+    expire_timestamp = int(expire.timestamp())  # convertir a UNIX timestamp
     
     to_encode = {
         "sub": str(subject),
-        "exp": expire,
+        "exp": expire_timestamp,
         "type": "refresh" if refresh else "access"
     }
     
-    try:
-        return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    except Exception as e:
-        logger.error(f"Error creating token: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not create token"
-        )
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+    
+    return encoded_jwt
+
 
 def decode_token(token: str) -> dict:
     try:

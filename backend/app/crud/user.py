@@ -5,6 +5,9 @@ from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash
 from typing import Optional, List, Union
 from pydantic import BaseModel
+from sqlalchemy import select, func
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException, status
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,11 +31,31 @@ async def get_user(db: AsyncSession, user_id: int) -> Optional[User]:
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     """Obtiene un usuario por email"""
     try:
-        result = await db.execute(select(User).where(User.email == email))
-        return result.scalar_one_or_none()
+        query = select(User).where(
+        func.lower(User.email) == email.lower()
+       )
+        result = await db.execute(query)
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            logger.debug(f"No user found with email: {email}")
+            return None
+            
+        logger.debug(f"User found: {user.email}")
+        return user
+        
+    except SQLAlchemyError as e:
+        logger.error(f"Database error getting user by email {email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error while retrieving user"
+        ) from e
     except Exception as e:
-        logger.error(f"Error getting user by email {email}: {str(e)}")
-        raise
+        logger.error(f"Unexpected error getting user by email {email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not retrieve user information"
+        ) from e
 
 async def get_users(
     db: AsyncSession, 
