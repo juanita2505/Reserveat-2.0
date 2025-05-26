@@ -1,1 +1,70 @@
-<p>home works!</p>
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1>Reserva en los mejores restaurantes</h1>
+      <p class="subtitle">Encuentra y reserva en los establecimientos gastronómicos más exclusivos de tu ciudad</p>
+      <div class="search-container">
+        <input type="text" placeholder="Buscar restaurantes...">
+        <button class="search-button">
+          <i class="material-icons">search</i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Restaurants -->
+  <section class="featured-section">
+    <h2>Restaurantes Destacados</h2>
+    <div class="restaurant-grid">
+      <div class="restaurant-card" *ngFor="let restaurant of featuredRestaurants">
+        <img [src]="restaurant.image" [alt]="restaurant.name">
+        <div class="restaurant-info">
+          <h3>{{ restaurant.name }}</h3>
+          <div class="rating">
+            <span class="stars">★★★★★</span>
+            <span class="review-count">({{ restaurant.reviews }} reseñas)</span>
+          </div>
+          <div class="cuisine-price">
+            <span class="cuisine">{{ restaurant.cuisine }}</span>
+            <span class="price">{{ restaurant.priceRange }}</span>
+          </div>
+          <button class="reserve-button" [routerLink]="['/restaurants', restaurant.id]">
+            Reservar ahora
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it Works -->
+  <section class="steps-section">
+    <h2>¿Cómo funciona Reserveat?</h2>
+    <div class="steps-container">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Busca restaurantes</h3>
+        <p>Encuentra el lugar perfecto según tu ubicación, tipo de comida y preferencias.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Haz tu reserva</h3>
+        <p>Selecciona fecha, hora y número de comensales en solo unos clics.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Disfruta tu comida</h3>
+        <p>Presenta tu confirmación en el restaurante y disfruta de una experiencia única.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2>¿Eres dueño de un restaurante?</h2>
+      <p>Únete a nuestra plataforma y aumenta tus reservas</p>
+      <button class="cta-button" routerLink="/owner/register">Registra tu restaurante</button>
+    </div>
+  </section>
+</div>

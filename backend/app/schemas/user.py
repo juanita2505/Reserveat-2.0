@@ -1,61 +1,40 @@
-from enum import Enum
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 from typing import Optional
-from datetime import datetime
+from enum import Enum
 
 class UserRole(str, Enum):
-    CUSTOMER = "customer"
-    RESTAURANT_OWNER = "restaurant_owner"
-    ADMIN = "admin"
+    customer = "customer"
+    restaurant_owner = "restaurant_owner"
+    admin = "admin"
 
 class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, example="john_doe")  
     email: EmailStr
-    full_name: Optional[str] = Field(None, min_length=2, max_length=50)
+    full_name: str = Field(..., min_length=2, max_length=100)
+    role: str = Field(default="customer")
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, max_length=50)
-    role: Optional[UserRole] = UserRole.CUSTOMER
-
-    @validator('password')
-    def password_complexity(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
-        if not any(c.isupper() for c in v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not any(c.isdigit() for c in v):
-            raise ValueError('Password must contain at least one digit')
-        return v
-
-class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    full_name: Optional[str] = Field(None, min_length=2, max_length=50)
-    password: Optional[str] = Field(None, min_length=8, max_length=50)
-    is_active: Optional[bool] = None
+    full_name: str
+    email: EmailStr
+    password: str
+    role: str
+    username: str
 
 class User(UserBase):
     id: int
     is_active: bool
-    role: UserRole
-    created_at: datetime
-    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "id": 1,
-                "email": "user@example.com",
-                "full_name": "John Doe",
-                "is_active": True,
-                "role": "customer",
-                "created_at": "2023-01-01T00:00:00",
-                "updated_at": "2023-01-01T00:00:00"
-            }
-        }
+class UserOut(User):
+    pass
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class UserRead(UserOut):
+    pass
 
-class TokenData(BaseModel):
-    email: Optional[str] = None
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None

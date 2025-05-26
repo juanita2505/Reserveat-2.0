@@ -1,40 +1,53 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
+import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
+import { AuthLayoutComponent } from './shared/layouts/auth-layout/auth-layout.component';
 
 export const routes: Routes = [
-  {
-    path: '',
-    loadComponent: () => import('./home/home.component').then(m => m.HomeComponent),
-    title: 'Reserveat - Inicio'
-  },
+  // Rutas Públicas (Auth) - Usan AuthLayout
   {
     path: 'auth',
-    loadChildren: () => import('./auth/auth.routes').then(m => m.AUTH_ROUTES),
+    component: AuthLayoutComponent,
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./auth/auth-tabs.component').then(m => m.AuthTabsComponent),
+        children: [
+          { path: 'login', loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent) },
+          { path: 'register', loadComponent: () => import('./auth/register/register.component').then(m => m.RegisterComponent) },
+          { path: '', redirectTo: 'login', pathMatch: 'full' }
+        ]
+      }
+    ]
   },
+  // Rutas Principales - Usan MainLayout y AuthGuard
   {
-    path: 'restaurants',
-    loadChildren: () => import('./restaurants/restaurants.routes').then(m => m.RESTAURANT_ROUTES),
-  },
-  {
-    path: 'reservations',
+    path: '',
+    component: MainLayoutComponent,
     canActivate: [AuthGuard],
-    loadChildren: () => import('./reservations/reservations.routes').then(m => m.RESERVATION_ROUTES),
+    children: [
+      { path: '', redirectTo: 'restaurants', pathMatch: 'full' }, // Redirige dentro del área autenticada
+      {
+        path: 'restaurants',
+        loadComponent: () => import('./restaurants/restaurant-list/restaurant-list.component').then(m => m.RestaurantListComponent)
+      },
+      
+      // Rutas de Owner (con RoleGuard adicional)
+      {
+        path: 'owner',
+        canActivate: [RoleGuard],
+        data: { role: 'restaurant_owner' },
+        children: [
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: 'dashboard', loadComponent: () => import('./owner/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+          { path: 'restaurants', loadComponent: () => import('./owner/restaurants/restaurants.component').then(m => m.RestaurantsComponent) },
+          { path: 'reservations', loadComponent: () => import('./owner/reservations/reservations.component').then(m => m.ReservationsComponent) }
+        ]
+      }
+    ]
   },
-  {
-    path: 'profile',
-    canActivate: [AuthGuard],
-    loadComponent: () => import('./user/profile/profile.component').then(m => m.ProfileComponent),
-    title: 'Mi Perfil'
-  },
-  {
-    path: 'owner',
-    canActivate: [AuthGuard, RoleGuard],
-    data: { role: 'restaurant_owner' },
-    loadChildren: () => import('./owner/owner.routes').then(m => m.OWNER_ROUTES),
-  },
-  {
-    path: '**',
-    redirectTo: ''
-  }
+  // Redirecciones globales
+  { path: '', redirectTo: 'auth/login', pathMatch: 'full' }, // Redirige a login por defecto
+  { path: '**', redirectTo: 'auth/login' } // Manejo de rutas no encontradas (404)
 ];
