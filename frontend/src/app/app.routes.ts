@@ -21,14 +21,13 @@ export const routes: Routes = [
       }
     ]
   },
-
   // Rutas Principales - Usan MainLayout y AuthGuard
   {
     path: '',
     component: MainLayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', loadComponent: () => import('./home/home/home.component').then(m => m.HomeComponent) },
+      { path: '', redirectTo: 'restaurants', pathMatch: 'full' }, // Redirige dentro del área autenticada
       {
         path: 'restaurants',
         loadComponent: () => import('./restaurants/restaurant-list/restaurant-list.component').then(m => m.RestaurantListComponent)
@@ -40,15 +39,15 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { role: 'restaurant_owner' },
         children: [
-          { path: '', loadComponent: () => import('./owner/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: 'dashboard', loadComponent: () => import('./owner/dashboard/dashboard.component').then(m => m.DashboardComponent) },
           { path: 'restaurants', loadComponent: () => import('./owner/restaurants/restaurants.component').then(m => m.RestaurantsComponent) },
           { path: 'reservations', loadComponent: () => import('./owner/reservations/reservations.component').then(m => m.ReservationsComponent) }
         ]
       }
     ]
   },
-
-  // Redirecciones
+  // Redirecciones globales
   { path: '', redirectTo: 'auth/login', pathMatch: 'full' }, // Redirige a login por defecto
-  { path: '**', redirectTo: '' } // Manejo de rutas no encontradas
+  { path: '**', redirectTo: 'auth/login' } // Manejo de rutas no encontradas (404)
 ];

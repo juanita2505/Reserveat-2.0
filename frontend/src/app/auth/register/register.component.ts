@@ -36,7 +36,7 @@ export class RegisterComponent implements OnDestroy {
     password: new FormControl('', [
       Validators.required,
       Validators.minLength(8),
-      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
+      Validators.pattern(/^(?=.[a-z])(?=.[A-Z])(?=.\d).$/)
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
     role: new FormControl('customer')
@@ -111,5 +111,5 @@ export class RegisterComponent implements OnDestroy {
   get email() { return this.registerForm.get('email'); }
   get password() { return this.registerForm.get('password'); }
   get confirmPassword() { return this.registerForm.get('confirmPassword'); }
-  get role() { return this.registerForm.get('role'); }
+  get role() { return this.registerForm.get('role'); }
 }
